@@ -49,3 +49,10 @@ body {
 ::-webkit-scrollbar-thumb:window-inactive {
   background: rgba(255, 255, 255, 0.3);
 }
+
+
+// --- Buttons --- //
+@import "global-styles/styles.buttons";
+
+// --- Mat snackbar --- //
+@import "global-styles/styles.snackbar";

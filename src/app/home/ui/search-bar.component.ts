@@ -22,6 +22,9 @@ import {MatIconModule} from "@angular/material/icon";
                [formControl]="subredditFormControl()"/>
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
+      <button class="main-button-warning clear-button" (click)="subredditFormControl().reset()">
+        <mat-icon>close</mat-icon>
+      </button>
     </mat-toolbar>
   `,
   styles: [`
@@ -39,6 +42,15 @@ import {MatIconModule} from "@angular/material/icon";
       color: white !important;
       font-size: 18px !important;
       font-weight: 500 !important;
+    }
+
+    .clear-button {
+      display: flex;
+      flex-flow: row nowrap;
+      align-items: center;
+
+      margin-left: 10px;
+      padding: 10px;
     }
   `,],
 })
