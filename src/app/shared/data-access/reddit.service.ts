@@ -1,8 +1,9 @@
 import {computed, inject, Injectable, Signal, signal, WritableSignal} from '@angular/core';
 import {Gif, RedditPost, RedditResponse} from "../interfaces";
-import {catchError, concatMap, EMPTY, map, Observable, startWith, Subject, switchMap} from "rxjs";
+import {catchError, concatMap, debounceTime, distinctUntilChanged, EMPTY, map, Observable, startWith, Subject, switchMap} from "rxjs";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {HttpClient} from "@angular/common/http";
+import {FormControl} from "@angular/forms";
 
 export interface GifState {
   gifs: Gif[];
@@ -17,6 +18,7 @@ export interface GifState {
 export class RedditService {
 
   private http: HttpClient = inject(HttpClient);
+  subredditFormControl: FormControl<string> = new FormControl();
 
   // --- State
   private state: WritableSignal<GifState> = signal<GifState>({
@@ -36,14 +38,38 @@ export class RedditService {
 
   // --- Sources
   pagination$: Subject<string | null> = new Subject<string | null>();
-  private gifsLoaded$: Observable<any> = this.pagination$.pipe(
-    startWith(null),
-    concatMap((lastKnownGif) => this.fetchFromReddit('gifs', lastKnownGif, 20)),
+
+  private subredditChanged$: Observable<string> = this.subredditFormControl.valueChanges.pipe(
+    debounceTime(300),
+    distinctUntilChanged(),
+    startWith('gifs'),
+    map((subreddit: string): string => (subreddit.length ? subreddit : 'gifs'))
+  );
+
+  private gifsLoaded$: Observable<any> = this.subredditChanged$.pipe(
+    switchMap((subreddit: string) =>
+      this.pagination$.pipe(
+        startWith(null),
+        concatMap((lastKnownGif: string | null) =>
+          this.fetchFromReddit(subreddit, lastKnownGif, 20)
+        )
+      )
+    )
   );
 
 
   // --- Reducers
   constructor() {
+    // subredditChanged$ reducer
+    this.subredditChanged$.pipe(takeUntilDestroyed()).subscribe(() =>
+      this.state.update((state) => ({
+        ...state,
+        loading: true,
+        gifs: [],
+        lastKnownGif: null,
+      }))
+    );
+
     // gifsLoaded$ reducer
     this.gifsLoaded$.pipe(takeUntilDestroyed()).subscribe((response) =>
       this.state.update((state) => ({
