@@ -69,17 +69,17 @@ export class GifPlayerComponent {
   videoElement = viewChild.required<ElementRef<HTMLVideoElement>>('gifPlayer');
   videoElement$ = toObservable(this.videoElement);
 
-  //--- State
+  // --- State
   state: WritableSignal<GifPlayerState> = signal<GifPlayerState>({
     playing: false,
     status: 'initial'
   });
 
-  //--- Selectors
+  // --- Selectors
   playing: Signal<boolean> = computed(() => this.state().playing);
   status: Signal<'initial' | 'loading' | 'loaded'> = computed(() => this.state().status);
 
-  //--- Sources
+  // --- Sources
   togglePlay$: Subject<void> = new Subject<void>()
   videoLoadStart$: Observable<Event> = this.togglePlay$.pipe(
     switchMap(() => this.videoElement$),
@@ -89,7 +89,7 @@ export class GifPlayerComponent {
     switchMap(({nativeElement}) => fromEvent(nativeElement, 'loadeddata')),
   );
 
-  //--- Reducers
+  // --- Reducers
   constructor() {
     // togglePlay$ reducer
     this.togglePlay$.pipe(takeUntilDestroyed()).subscribe(() =>
@@ -115,7 +115,7 @@ export class GifPlayerComponent {
       }))
     );
 
-    //--- Effects
+    // --- Effects
     effect(() => {
       const {nativeElement: video} = this.videoElement();
       const playing = this.playing();
