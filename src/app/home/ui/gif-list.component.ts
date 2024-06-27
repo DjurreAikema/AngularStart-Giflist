@@ -47,6 +47,10 @@ import {WINDOW} from "../../shared/utils/injection-tokens";
       text-align: center;
       margin-top: 4rem;
     }
+
+    .toolbar-spacer {
+      flex: 1 1 auto;
+    }
   `]
 })
 export class GifListComponent {
