@@ -20,7 +20,7 @@ import {WINDOW} from "../../shared/utils/injection-tokens";
       <div>
         <app-gif-player [src]="gif.src" [thumbnail]="gif.thumbnail" data-testid="gif-list-item"/>
         <mat-toolbar color="primary">
-          <span>{{ gif.title }}</span>
+          <span class="gif-title">{{ gif.title }}</span>
           <span class="toolbar-spacer"></span>
           <button mat-icon-button (click)="window.open('https://reddit.com/' + gif.permalink)">
             <mat-icon>comment</mat-icon>
@@ -38,7 +38,11 @@ import {WINDOW} from "../../shared/utils/injection-tokens";
     }
 
     mat-toolbar {
-      white-space: break-spaces;
+    }
+
+    .gif-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     p {
