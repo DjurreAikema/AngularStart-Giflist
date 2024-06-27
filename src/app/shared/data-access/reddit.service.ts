@@ -1,11 +1,14 @@
 import {computed, inject, Injectable, Signal, signal, WritableSignal} from '@angular/core';
 import {Gif, RedditPost, RedditResponse} from "../interfaces";
-import {catchError, EMPTY, map, Observable} from "rxjs";
+import {catchError, concatMap, EMPTY, map, Observable, startWith, Subject, switchMap} from "rxjs";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {HttpClient} from "@angular/common/http";
 
 export interface GifState {
   gifs: Gif[];
+  error: string | null;
+  loading: boolean;
+  lastKnownGif: string | null;
 }
 
 @Injectable({
@@ -18,36 +21,60 @@ export class RedditService {
   // --- State
   private state: WritableSignal<GifState> = signal<GifState>({
     gifs: [],
+    error: null,
+    loading: true,
+    lastKnownGif: null,
   });
 
 
   // --- Selectors
   gifs: Signal<Gif[]> = computed(() => this.state().gifs);
+  loading: Signal<boolean> = computed(() => this.state().loading);
+  error: Signal<string | null> = computed(() => this.state().error);
+  lastKnownGif: Signal<string | null> = computed(() => this.state().lastKnownGif);
 
 
   // --- Sources
-  private gifsLoaded$: Observable<Gif[]> = this.fetchFromReddit('gifs');
+  pagination$: Subject<string | null> = new Subject<string | null>();
+  private gifsLoaded$: Observable<any> = this.pagination$.pipe(
+    startWith(null),
+    concatMap((lastKnownGif) => this.fetchFromReddit('gifs', lastKnownGif, 20)),
+  );
 
 
   // --- Reducers
   constructor() {
     // gifsLoaded$ reducer
-    this.gifsLoaded$.pipe(takeUntilDestroyed()).subscribe((gifs) =>
+    this.gifsLoaded$.pipe(takeUntilDestroyed()).subscribe((response) =>
       this.state.update((state) => ({
         ...state,
-        gifs: [...state.gifs, ...gifs],
+        gifs: [...state.gifs, ...response.gifs],
+        loading: false,
+        lastKnownGif: response.lastKnownGif,
       }))
     );
   }
 
 
   // --- Functions
-  private fetchFromReddit(subreddit: string): Observable<Gif[]> {
+  private fetchFromReddit(subreddit: string, after: string | null, gifsRequired: number): Observable<any> {
     return this.http.get<RedditResponse>(
-      `https://www.reddit.com/r/${subreddit}/hot/.json?limit=100`
+      `https://www.reddit.com/r/${subreddit}/hot/.json?limit=100` +
+      (after ? `&after=${after}` : ``)
     ).pipe(
       catchError((err) => EMPTY),
-      map((response) => this.convertRedditPostsToGifs(response.data.children))
+      map((response) => {
+        const posts = response.data.children;
+        const lastKnownGif = posts.length
+          ? posts[posts.length - 1].data.name
+          : null;
+
+        return {
+          gifs: this.convertRedditPostsToGifs(posts),
+          gifsRequired,
+          lastKnownGif,
+        };
+      })
     );
   }
 
