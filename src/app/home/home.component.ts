@@ -1,16 +1,20 @@
-import {Component} from '@angular/core';
+import {Component, inject} from '@angular/core';
+import {GifListComponent} from "./ui/gif-list.component";
+import {RedditService} from "../shared/data-access/reddit.service";
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [],
+  imports: [
+    GifListComponent
+  ],
   template: `
-    <p>
-      home works!
-    </p>
+    <app-gif-list class="grid-container" [gifs]="redditService.gifs()"/>
   `,
   styles: ``
 })
 export default class HomeComponent {
+
+  public redditService: RedditService = inject(RedditService);
 
 }
