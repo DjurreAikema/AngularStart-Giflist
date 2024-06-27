@@ -40,7 +40,7 @@ export class RedditService {
   pagination$: Subject<string | null> = new Subject<string | null>();
 
   private subredditChanged$: Observable<string> = this.subredditFormControl.valueChanges.pipe(
-    debounceTime(300),
+    debounceTime(500),
     distinctUntilChanged(),
     startWith('gifs'),
     map((subreddit: string): string => (subreddit.length ? subreddit : 'gifs'))

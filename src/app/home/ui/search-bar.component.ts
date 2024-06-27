@@ -19,23 +19,28 @@ import {MatIconModule} from "@angular/material/icon";
     <mat-toolbar>
       <mat-form-field appearance="outline">
         <input matInput placeholder="subreddit..." type="text"
-          [formControl]="subredditFormControl()"/>
+               [formControl]="subredditFormControl()"/>
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
     </mat-toolbar>
   `,
-  styles: [
-    `
-      mat-toolbar {
-        height: 80px;
-      }
+  styles: [`
+    mat-toolbar {
+      height: 80px;
+      background-color: transparent;
+    }
 
-      mat-form-field {
-        width: 100%;
-        padding-top: 20px;
-      }
-    `,
-  ],
+    mat-form-field {
+      width: 100%;
+      padding-top: 20px;
+    }
+
+    input {
+      color: white !important;
+      font-size: 18px !important;
+      font-weight: 500 !important;
+    }
+  `,],
 })
 export class SearchBarComponent {
 
