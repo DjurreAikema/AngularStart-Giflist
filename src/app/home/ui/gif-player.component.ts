@@ -1,7 +1,8 @@
 import {Component, computed, effect, ElementRef, input, InputSignal, Signal, signal, viewChild, WritableSignal} from '@angular/core';
-import {takeUntilDestroyed, toObservable} from "@angular/core/rxjs-interop";
-import {fromEvent, Observable, Subject, switchMap} from "rxjs";
+import {toObservable} from "@angular/core/rxjs-interop";
+import {fromEvent, map, merge, Observable, Subject, switchMap} from "rxjs";
 import {MatProgressSpinner} from "@angular/material/progress-spinner";
+import {connect} from "ngxtension/connect";
 
 interface GifPlayerState {
   playing: boolean;
@@ -96,29 +97,18 @@ export class GifPlayerComponent {
 
   // --- Reducers
   constructor() {
-    // togglePlay$ reducer
-    this.togglePlay$.pipe(takeUntilDestroyed()).subscribe(() =>
-      this.state.update((state) => ({
-        ...state,
-        playing: !state.playing
-      }))
+    const nextState$ = merge(
+      // videoLoadStart$ reducer
+      this.videoLoadStart$.pipe(map(() => ({status: 'loading' as const}))),
+      // videoLoadComplete$ reducer
+      this.videoLoadComplete$.pipe(map(() => ({status: 'loaded' as const}))),
     );
 
-    // videoLoadStart$ reducer
-    this.videoLoadStart$.pipe(takeUntilDestroyed()).subscribe(() =>
-      this.state.update((state) => ({
-        ...state,
-        status: 'loading'
-      }))
-    );
+    connect(this.state)
+      .with(nextState$)
+      // togglePlay$ reducer
+      .with(this.togglePlay$, (state) => ({playing: !state.playing}));
 
-    // videoLoadComplete$ reducer
-    this.videoLoadComplete$.pipe(takeUntilDestroyed()).subscribe(() =>
-      this.state.update((state) => ({
-        ...state,
-        status: 'loaded'
-      }))
-    );
 
     // --- Effects
     effect(() => {
@@ -137,5 +127,4 @@ export class GifPlayerComponent {
       }
     });
   }
-
 }

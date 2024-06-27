@@ -1,9 +1,10 @@
 import {computed, inject, Injectable, Signal, signal, WritableSignal} from '@angular/core';
 import {Gif, RedditPost, RedditResponse} from "../interfaces";
-import {catchError, concatMap, debounceTime, distinctUntilChanged, EMPTY, expand, map, Observable, startWith, Subject, switchMap} from "rxjs";
+import {catchError, concatMap, debounceTime, distinctUntilChanged, EMPTY, expand, map, merge, Observable, startWith, Subject, switchMap} from "rxjs";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {HttpClient, HttpErrorResponse} from "@angular/common/http";
 import {FormControl} from "@angular/forms";
+import {connect} from "ngxtension/connect";
 
 export interface GifState {
   gifs: Gif[];
@@ -77,33 +78,23 @@ export class RedditService {
 
   // --- Reducers
   constructor() {
-    // subredditChanged$ reducer
-    this.subredditChanged$.pipe(takeUntilDestroyed()).subscribe(() =>
-      this.state.update((state) => ({
-        ...state,
-        loading: true,
-        gifs: [],
-        lastKnownGif: null,
-      }))
+    const nextState$ = merge(
+      // subredditChanged$ reducer
+      this.subredditChanged$.pipe(
+        map(() => ({loading: true, gifs: [], lastKnownGif: null})),
+      ),
+      // error$ reducer
+      this.error$.pipe(map((error) => ({error})))
     );
 
-    // gifsLoaded$ reducer
-    this.gifsLoaded$.pipe(takeUntilDestroyed()).subscribe((response) =>
-      this.state.update((state) => ({
-        ...state,
+    connect(this.state)
+      .with(nextState$)
+      // gifsLoaded$ reducer
+      .with(this.gifsLoaded$, (state, response) => ({
         gifs: [...state.gifs, ...response.gifs],
         loading: false,
         lastKnownGif: response.lastKnownGif,
-      }))
-    );
-
-    // error$ reducer
-    this.error$.pipe(takeUntilDestroyed()).subscribe((error) =>
-      this.state.update((state) => ({
-        ...state,
-        error,
-      }))
-    );
+      }));
   }
 
 
